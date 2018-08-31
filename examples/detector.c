@@ -11,7 +11,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
 
     srand(time(0));
     char *base = basecfg(cfgfile);
-    printf("%s\n", base);
+    fprintf(stderr,"%s\n", base);
     float avg_loss = -1;
     network **nets = calloc(ngpus, sizeof(network));
 
@@ -30,7 +30,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     network *net = nets[0];
 
     int imgs = net->batch * net->subdivisions * ngpus;
-    printf("Learning Rate: %g, Momentum: %g, Decay: %g\n", net->learning_rate, net->momentum, net->decay);
+    fprintf(stderr,"Learning Rate: %g, Momentum: %g, Decay: %g\n", net->learning_rate, net->momentum, net->decay);
     data train, buffer;
 
     layer l = net->layers[net->n - 1];
@@ -61,7 +61,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     //while(i*imgs < N*120){
     while(get_current_batch(net) < net->max_batches){
         if(l.random && count++%10 == 0){
-            printf("Resizing\n");
+            fprintf(stderr,"Resizing\n");
             int dim = (rand() % 10 + 10) * 32;
             if (get_current_batch(net)+200 > net->max_batches) dim = 608;
             //int dim = (rand() % 4 + 16) * 32;
@@ -109,7 +109,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
            }
          */
 
-        printf("Loaded: %lf seconds\n", what_time_is_it_now()-time);
+        fprintf(stderr,"Loaded: %lf seconds\n", what_time_is_it_now()-time);
 
         time=what_time_is_it_now();
         float loss = 0;
@@ -126,7 +126,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
         avg_loss = avg_loss*.9 + loss*.1;
 
         i = get_current_batch(net);
-        printf("%ld: %f, %f avg, %f rate, %lf seconds, %d images\n", get_current_batch(net), loss, avg_loss, get_current_rate(net), what_time_is_it_now()-time, i*imgs);
+        fprintf(stderr,"%ld: %f, %f avg, %f rate, %lf seconds, %d images\n", get_current_batch(net), loss, avg_loss, get_current_rate(net), what_time_is_it_now()-time, i*imgs);
         if(i%100==0){
 #ifdef GPU
             if(ngpus != 1) sync_nets(nets, ngpus, 0);

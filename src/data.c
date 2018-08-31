@@ -255,8 +255,9 @@ void fill_truth_swag(char *path, float *truth, int classes, int flip, float dx, 
 void fill_truth_region(char *path, float *truth, int classes, int num_boxes, int flip, float dx, float dy, float sx, float sy)
 {
     char labelpath[4096];
-    find_replace(path, "images", "labels", labelpath);
-    find_replace(labelpath, "JPEGImages", "labels", labelpath);
+    find_replace(path, "train2017", "train2017-labels", labelpath);
+    find_replace(labelpath, "val2017", "val2017-labels", labelpath);
+    //find_replace(labelpath, "JPEGImages", "labels", labelpath);
 
     find_replace(labelpath, ".jpg", ".txt", labelpath);
     find_replace(labelpath, ".png", ".txt", labelpath);
@@ -447,8 +448,10 @@ void fill_truth_mask(char *path, int num_boxes, float *truth, int classes, int w
 void fill_truth_detection(char *path, int num_boxes, float *truth, int classes, int flip, float dx, float dy, float sx, float sy)
 {
     char labelpath[4096];
-    find_replace(path, "images", "labels", labelpath);
-    find_replace(labelpath, "JPEGImages", "labels", labelpath);
+    //find_replace(path, "images", "labels", labelpath);
+    find_replace(path, "train2017", "train2017-labels", labelpath);
+    find_replace(labelpath, "val2017", "val2017-labels", labelpath);
+    //find_replace(labelpath, "JPEGImages", "labels", labelpath);
 
     find_replace(labelpath, "raw", "labels", labelpath);
     find_replace(labelpath, ".jpg", ".txt", labelpath);
