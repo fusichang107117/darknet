@@ -448,12 +448,14 @@ void forward_convolutional_layer(convolutional_layer l, network net)
 
     fill_cpu(l.outputs*l.batch, 0, l.output, 1);
 
+    //printf("%s(), w: %d, h: %d, l.c: %d, outw: %d, outh: %d, l.n: %d, bn: %d, l.size: %d\n", __func__, l.w, l.h, l.c, l.out_w, l.out_h, l.n, l.batch_normalize, l.size);
+/*
     if(l.xnor){
         binarize_weights(l.weights, l.n, l.c/l.groups*l.size*l.size, l.binary_weights);
         swap_binary(&l);
         binarize_cpu(net.input, l.c*l.h*l.w*l.batch, l.binary_input);
         net.input = l.binary_input;
-    }
+    }*/
 
     int m = l.n/l.groups;
     int k = l.size*l.size*l.c/l.groups;
@@ -482,6 +484,96 @@ void forward_convolutional_layer(convolutional_layer l, network net)
 
     activate_array(l.output, l.outputs*l.batch, l.activation);
     if(l.binary || l.xnor) swap_binary(&l);
+
+    #if  0
+    printf("\nOUTPUT:\n");
+    static int count = 0;
+    if (count == 12) {
+        printf("\n\n===========count:%d==========\n", count);
+        printf("weights:\n");
+        for (i = 0; i < 10; i++) {
+            printf("%03d, %f\n", i, l.weights[i]);
+        }
+        printf("\n\nbiases:\n");
+        for (i = 0; i < 6; i++) {
+            printf("%f\t", l.biases[i]);
+        }
+
+        if (l.batch_normalize) {
+            printf("\n\nscales:\n");
+            for (i = 0; i < 6; i++) {
+                printf("%f\t", l.scales[i]);
+            }
+            printf("\n\nmean:\n");
+            for (i = 0; i < 6; i++) {
+                printf("%f\t", l.rolling_mean[i]);
+            }
+            printf("\n\nvariance:\n");
+            for (i = 0; i < 6; i++) {
+                printf("%f\t", l.rolling_variance[i]);
+            }
+            printf("\n");
+        }
+
+#if 1
+    for (i = 0; i < 8; i++) {
+        printf("\ngInChannels : %d\n", i);
+        for (j = 0; j < 8; j++) {
+            for (k = 0; k < 8; k++) {
+                printf("%f\t", net.input[i * l.h *l.w + j * l.w + k]);
+            }
+            printf("\n");
+        }
+    }
+//#else
+    for (i = 129; i < 129 + 8; i++) {
+        printf("\ngInChannels : %d\n", i);
+        for (j = l.h - 8; j < l.h; j++) {
+            for (k = l.w - 8; k < l.w; k++) {
+                printf("%f\t", net.input[i * l.h *l.w + j * l.w + k]);
+            }
+            printf("\n");
+        }
+    }
+
+    for (i = l.c - 8; i < l.c; i++) {
+        printf("\ngInChannels : %d\n", i);
+        for (j = l.h - 8; j < l.h; j++) {
+            for (k = l.w - 8; k < l.w; k++) {
+                printf("%f\t", net.input[i * l.h *l.w + j * l.w + k]);
+            }
+            printf("\n");
+        }
+    }
+#endif
+
+#if 1
+    for (i = 0; i < 8; i++) {
+        printf("\ngOutChannels : %d\n", i);
+        for (j = 0; j < 8; j++) {
+            for (k = 0; k < 8; k++) {
+                printf("%f\t", l.output[i * l.out_h *l.out_w + j * l.out_w + k]);
+            }
+            printf("\n");
+        }
+    }
+//#else
+    for (i = l.n - 8; i < l.n; i++) {
+        printf("\ngOutChannels : %d\n", i);
+        for (j = l.out_h - 8; j < l.out_h; j++) {
+            for (k = l.out_w - 8; k < l.out_w; k++) {
+                printf("%f\t", l.output[i * l.out_h *l.out_w + j * l.out_w + k]);
+            }
+            printf("\n");
+        }
+    }
+#endif
+
+    exit(0);
+    }
+    count++;
+
+#endif
 }
 
 void backward_convolutional_layer(convolutional_layer l, network net)

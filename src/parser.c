@@ -197,6 +197,8 @@ convolutional_layer parse_convolutional(list *options, size_params params)
     int binary = option_find_int_quiet(options, "binary", 0);
     int xnor = option_find_int_quiet(options, "xnor", 0);
 
+    //printf("%s(), {%d, %d, %d, %d, %d}\n", __func__, n, batch, h, w, c);
+
     convolutional_layer layer = make_convolutional_layer(batch,h,w,c,n,groups,size,stride,padding,activation, batch_normalize, binary, xnor, params.net->adam);
     layer.flipped = option_find_int_quiet(options, "flipped", 0);
     layer.dot = option_find_float_quiet(options, "dot", 0);
@@ -381,11 +383,14 @@ layer parse_region(list *options, size_params params)
         for(i = 0; i < len; ++i){
             if (a[i] == ',') ++n;
         }
+        printf("%s(), %d, n: %d\n", __func__, __LINE__, n);
         for(i = 0; i < n; ++i){
             float bias = atof(a);
+            printf("%f\t", bias);
             l.biases[i] = bias;
             a = strchr(a, ',')+1;
         }
+        printf("\n");
     }
     return l;
 }
@@ -1185,6 +1190,9 @@ void load_convolutional_weights(layer l, FILE *fp)
             printf("\n");
         }
     }
+    static int index = 1;
+    int offset = ftell(fp);
+   // printf("\n%s(), %-02d\t%-10d\t%-10d\t%-10d\t%-10d\t%d\n", __func__, index++, offset, num, l.n, l.size, l.batch_normalize);
     fread(l.weights, sizeof(float), num, fp);
     //if(l.c == 3) scal_cpu(num, 1./256, l.weights, 1);
     if (l.flipped) {
@@ -1206,7 +1214,7 @@ void load_weights_upto(network *net, char *filename, int start, int cutoff)
         cuda_set_device(net->gpu_index);
     }
 #endif
-    fprintf(stderr, "Loading weights from %s...", filename);
+    fprintf(stderr, "Loading weights from %s...\n\n", filename);
     fflush(stdout);
     FILE *fp = fopen(filename, "rb");
     if(!fp) file_error(filename);
@@ -1227,6 +1235,8 @@ void load_weights_upto(network *net, char *filename, int start, int cutoff)
     int transpose = (major > 1000) || (minor > 1000);
 
     int i;
+    int offset = ftell(fp);
+    printf("%s(), %d, %d\n", __func__, __LINE__, offset);
     for(i = start; i < net->n && i < cutoff; ++i){
         layer l = net->layers[i];
         if (l.dontload) continue;

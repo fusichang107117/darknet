@@ -515,8 +515,10 @@ int num_detections(network *net, float thresh)
         layer l = net->layers[i];
         if(l.type == YOLO){
             s += yolo_num_detections(l, thresh);
+            //printf("%s(), %d, s: %d\n", __func__,__LINE__, s);
         }
         if(l.type == DETECTION || l.type == REGION){
+            // printf("%s(), %d\n", __func__,__LINE__);
             s += l.w*l.h*l.n;
         }
     }
@@ -528,6 +530,8 @@ detection *make_network_boxes(network *net, float thresh, int *num)
     layer l = net->layers[net->n - 1];
     int i;
     int nboxes = num_detections(net, thresh);
+
+  //  printf("%s(), %d, nboxes: %d\n", __func__, net->n, nboxes);
     if(num) *num = nboxes;
     detection *dets = calloc(nboxes, sizeof(detection));
     for(i = 0; i < nboxes; ++i){
@@ -546,13 +550,16 @@ void fill_network_boxes(network *net, int w, int h, float thresh, float hier, in
         layer l = net->layers[j];
         if(l.type == YOLO){
             int count = get_yolo_detections(l, w, h, net->w, net->h, thresh, map, relative, dets);
+           // printf("%s(), %d, count: %d\n", __func__,__LINE__, count);
             dets += count;
         }
         if(l.type == REGION){
+            //printf("%s(), %d\n", __func__, __LINE__);
             get_region_detections(l, w, h, net->w, net->h, thresh, map, hier, relative, dets);
             dets += l.w*l.h*l.n;
         }
         if(l.type == DETECTION){
+          //  printf("%s(), %d\n", __func__, __LINE__);
             get_detection_detections(l, w, h, thresh, dets);
             dets += l.w*l.h*l.n;
         }

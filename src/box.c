@@ -59,6 +59,8 @@ void do_nms_sort(detection *dets, int total, int classes, float thresh)
 {
     int i, j, k;
     k = total-1;
+
+    //printf("%s(), %d, total: %d\n", __func__, __LINE__, total);
     for(i = 0; i <= k; ++i){
         if(dets[i].objectness == 0){
             detection swap = dets[i];
