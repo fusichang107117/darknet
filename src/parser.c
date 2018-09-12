@@ -1236,7 +1236,7 @@ void load_weights_upto(network *net, char *filename, int start, int cutoff)
 
     int i;
     int offset = ftell(fp);
-    printf("%s(), %d, %d\n", __func__, __LINE__, offset);
+    ///printf("%s(), %d, %d\n", __func__, __LINE__, offset);
     for(i = start; i < net->n && i < cutoff; ++i){
         layer l = net->layers[i];
         if (l.dontload) continue;

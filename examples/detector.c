@@ -558,7 +558,7 @@ void validate_detector_recall(char *cfgfile, char *weightfile)
     }
 }
 
-const char *dect_namelist[] = {
+const char *coco_dect_namelist[] = {
     "person",
     "bicycle",
     "car",
@@ -641,9 +641,32 @@ const char *dect_namelist[] = {
     "toothbrush",
 };
 
+const char *coco_person_namelist[] = {
+    "person",
+};
+
+FILE *fp_result = NULL;
+
 void print_detector_info(image im, detection *dets, int num, float thresh, const char **names, int classes)
 {
     int i,j;
+    int total = 0;
+
+    if (num <= 0)
+        return;
+
+    for(i = 0; i < num; ++i){
+        for(j = 0; j < classes; ++j){
+            if (dets[i].prob[j] > thresh) {
+               total++;
+               break;
+            }
+        }
+    }
+
+    char tmp[1024] = {'\0'};
+    snprintf(tmp,1024,"%d\n", total);
+    fputs(tmp, fp_result);
 
     for(i = 0; i < num; ++i){
         int class = -1;
@@ -651,6 +674,7 @@ void print_detector_info(image im, detection *dets, int num, float thresh, const
             if (dets[i].prob[j] > thresh) {
                 class = 1;
                 printf("%s: %.0f%%\n", names[j], dets[i].prob[j]*100);
+                break;
             }
         }
         if(class >= 0){
@@ -665,15 +689,35 @@ void print_detector_info(image im, detection *dets, int num, float thresh, const
             if(top < 0) top = 0;
             if(bot > im.h-1) bot = im.h-1;
             printf("coordinates is (%d, %d), (%d, %d)\n", left, top, right - left, bot - top);
+            snprintf(tmp, 1024, "%-3d %-3d %-3d %-3d %.0f\n", left, top, right - left, bot - top, dets[i].prob[j]*100);
+            fputs(tmp, fp_result);
         }
     }
+    fflush(fp_result);
 }
 
 void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen)
 {
     list *options = read_data_cfg(datacfg);
-    char *name_list = option_find_str(options, "names", "data/names.list");
-    char **names = get_labels(name_list);
+    //char *name_list = option_find_str(options, "names", "data/names.list");
+    char **names = coco_person_namelist;//get_labels(name_list);
+    char *img_list = "/mnt/myshare/data/xiaomi_person_dataset/person_list_xiaomi.txt";
+    char *img_dir = "/mnt/myshare/data/xiaomi_person_dataset/test_360p";
+    char *detect_result = "/mnt/myshare/data/xiaomi_person_dataset/result.txt";
+    char img_name[1024];
+    char img_path[1024];
+
+    FILE *fp = fopen(img_list, "rb");
+    if (!fp) {
+        printf("%s open fail\n", img_list);
+        return;
+    }
+
+    fp_result = fopen(detect_result, "wb");
+    if (!fp_result) {
+        printf("%s create fail\n", detect_result);
+        return;
+    }
 
     image **alphabet = load_alphabet();
     network *net = load_network(cfgfile, weightfile, 0);
@@ -683,8 +727,8 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
     char buff[256];
     char *input = buff;
     float nms=.45;
-    while(1){
-        if(filename){
+    while(!feof(fp)){
+/*        if(filename){
             strncpy(input, filename, 256);
         } else {
             printf("Enter Image Path: ");
@@ -692,8 +736,20 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
             input = fgets(input, 256, stdin);
             if(!input) return;
             strtok(input, "\n");
+        }*/
+        char *read_buf = fgets(img_name, 1024, fp);
+        if (!read_buf) {
+            printf("file end\n");
+            break;
         }
-        image im = load_image_color(input,0,0);
+        fputs(img_name, fp_result);
+
+        strncpy(img_name + strlen(img_name) - 1, ".jpg", 5);
+        printf("%s\n", img_name);
+        snprintf(img_path, 1024, "%s/%s", img_dir, img_name);
+
+        //continue;
+        image im = load_image_color(img_path,0,0);
         image sized = letterbox_image(im, net->w, net->h);
         //image sized = resize_image(im, net->w, net->h);
         //image sized2 = resize_max(im, net->w);
@@ -705,18 +761,20 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         float *X = sized.data;
         time=what_time_is_it_now();
         network_predict(net, X);
-        printf("%s: Predicted in %f seconds.\n", input, what_time_is_it_now()-time);
+        printf("%s: Predicted in %f seconds.\n", img_path, what_time_is_it_now()-time);
         int nboxes = 0;
         detection *dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, 0, 1, &nboxes);
         //printf("%d\n", nboxes);
         //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
-        draw_detections(im, dets, nboxes, thresh, names, alphabet, l.classes);
+        //draw_detections(im, dets, nboxes, thresh, names, alphabet, l.classes);
 
-        //print_detector_info(im, dets, nboxes, thresh, names, l.classes);
+        //printf("nboxes: %d\n", nboxes);
+
+        print_detector_info(im, dets, nboxes, thresh, names, l.classes);
 
         free_detections(dets, nboxes);
-        if(outfile){
+  /*      if(outfile){
             save_image(im, outfile);
         }
         else{
@@ -730,12 +788,17 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
             cvWaitKey(0);
             cvDestroyAllWindows();
 #endif
-        }
+        }*/
 
         free_image(im);
         free_image(sized);
-        if (filename) break;
+       // if (filename) break;
     }
+
+    if (fp)
+        fclose(fp);
+    if (fp_result)
+        fclose(fp_result);
 }
 
 /*
