@@ -673,7 +673,7 @@ void print_detector_info(image im, detection *dets, int num, float thresh, const
         for(j = 0; j < classes; ++j){
             if (dets[i].prob[j] > thresh) {
                 class = 1;
-                printf("%s: %.0f%%\n", names[j], dets[i].prob[j]*100);
+                printf("%s: %.2f\n", names[j], dets[i].prob[j]);
                 break;
             }
         }
@@ -689,7 +689,7 @@ void print_detector_info(image im, detection *dets, int num, float thresh, const
             if(top < 0) top = 0;
             if(bot > im.h-1) bot = im.h-1;
             printf("coordinates is (%d, %d), (%d, %d)\n", left, top, right - left, bot - top);
-            snprintf(tmp, 1024, "%-3d %-3d %-3d %-3d %.0f\n", left, top, right - left, bot - top, dets[i].prob[j]*100);
+            snprintf(tmp, 1024, "%-3d %-3d %-3d %-3d %.2f\n", left, top, right - left, bot - top, dets[i].prob[j]);
             fputs(tmp, fp_result);
         }
     }
@@ -727,6 +727,7 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
     char buff[256];
     char *input = buff;
     float nms=.45;
+    int count = 0;
     while(!feof(fp)){
 /*        if(filename){
             strncpy(input, filename, 256);
@@ -747,6 +748,7 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         strncpy(img_name + strlen(img_name) - 1, ".jpg", 5);
         printf("%s\n", img_name);
         snprintf(img_path, 1024, "%s/%s", img_dir, img_name);
+        printf("%s\n", img_path);
 
         //continue;
         image im = load_image_color(img_path,0,0);
@@ -767,28 +769,20 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         //printf("%d\n", nboxes);
         //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
-        //draw_detections(im, dets, nboxes, thresh, names, alphabet, l.classes);
+        draw_detections(im, dets, nboxes, thresh, names, alphabet, l.classes);
 
         //printf("nboxes: %d\n", nboxes);
 
         print_detector_info(im, dets, nboxes, thresh, names, l.classes);
 
         free_detections(dets, nboxes);
-  /*      if(outfile){
+        if(outfile){
             save_image(im, outfile);
+        } else{
+            strncpy(img_path + strlen(img_path) - 4, "", 5);
+            printf("%s\n", img_path);
+            save_image(im, img_path);
         }
-        else{
-            save_image(im, "predictions");
-#ifdef OPENCV
-            cvNamedWindow("predictions", CV_WINDOW_NORMAL); 
-            if(fullscreen){
-                cvSetWindowProperty("predictions", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-            }
-            show_image(im, "predictions");
-            cvWaitKey(0);
-            cvDestroyAllWindows();
-#endif
-        }*/
 
         free_image(im);
         free_image(sized);
